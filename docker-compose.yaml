@@ -1,0 +1,31 @@
+version: '3'
+services:
+  elasticsearch:
+    container_name: elasticsearch
+    image: elasticsearch:8.6.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    deploy:
+      resources:
+        limits:
+          memory: 4GB
+  postgres:
+    container_name: postgres
+    image: postgres:13.0
+    volumes:
+      - ./pgdump.sql:/docker-entrypoint-initdb.d/dump.sql
+    env_file:
+      - ./etl/.env
+    ports:
+      - "5432:5432"
+  etl:
+    container_name: etl
+    build: .
+    depends_on:
+      - postgres
+      - elasticsearch
+    env_file:
+      - ./etl/.env

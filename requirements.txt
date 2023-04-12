@@ -1,0 +1,7 @@
+backoff==2.2.1
+certifi==2022.12.7
+elastic-transport==8.4.0
+elasticsearch==8.7.0
+psycopg2-binary==2.9.6
+python-dotenv==1.0.0
+urllib3==1.26.15
