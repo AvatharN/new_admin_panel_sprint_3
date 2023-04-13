@@ -8,7 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # Скопируйте в контейнер файлы, которые редко меняются
-COPY /etl/etl.py .
+COPY ./etl/main.py .
+COPY ./etl/helpers/ helpers/
+COPY ./etl/settings.py .
 COPY requirements.txt .
 
 RUN  pip install --upgrade pip \
@@ -16,4 +18,4 @@ RUN  pip install --upgrade pip \
 
 
 # Укажите, как запускать ваш сервис
-CMD ["python", "etl.py"]
+CMD ["python", "main.py"]
