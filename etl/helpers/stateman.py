@@ -9,7 +9,7 @@ class StateManager:
         :param state_file: file where state will be saved
         """
         self.state_file = state_file
-        self.default = datetime.datetime(1970, 1, 1).strftime('%Y-%m-%d %H:%M:%S')
+        self.default = datetime.datetime(1970, 1, 1)
 
     def load_state(self):
         """
@@ -23,16 +23,16 @@ class StateManager:
                     logging.log(logging.INFO, f"loaded:  {datetime.datetime.strptime(a, '%Y-%m-%d %H:%M:%S')}")
                     return datetime.datetime.strptime(a, '%Y-%m-%d %H:%M:%S')
                 else:
-                    return self.default
+                    return self.default.strftime('%Y-%m-%d %H:%M:%S')
         except FileNotFoundError:
-            self.save_state()
+            self.save_state(self.default)
             return self.default
 
-    def save_state(self):
+    def save_state(self, time=datetime.datetime.now()):
         """
         save current time to file
         :return:
         """
         with open(self.state_file, 'w') as f:
-            logging.log(logging.INFO, f"saved:  {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            f.write(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            logging.log(logging.INFO, f"saved:  {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            f.write(time.strftime('%Y-%m-%d %H:%M:%S'))
