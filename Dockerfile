@@ -11,6 +11,7 @@ ENV PYTHONUNBUFFERED 1
 COPY ./etl/main.py .
 COPY ./etl/helpers/ helpers/
 COPY ./etl/settings.py .
+COPY ./etl/index.json .
 COPY requirements.txt .
 
 RUN  pip install --upgrade pip \

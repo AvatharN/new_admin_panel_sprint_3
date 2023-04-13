@@ -25,6 +25,7 @@ class ElasticSearchSender:
     def get_index_from_file(self):
         with open('index.json') as file:
             self.index_body = json.load(file)
+            return self.index_body
 
     def __enter__(self):
         self.connect()
@@ -57,6 +58,7 @@ class ElasticSearchSender:
                 'actors': [{'id': a['id'], 'name': a['full_name']} for a in row['actor'].values()],
                 'writers': [{'id': w['id'], 'name': w['full_name']} for w in row['writer'].values()]
             }
+            logging.log(logging.INFO, doc)
             yield doc
 
     @on_exception(expo, (ConnectionError, ConnectionTimeout, TransportError), max_tries=500)
@@ -83,6 +85,6 @@ class ElasticSearchSender:
         with self as client:
             client.indices.create(
                 index=self.index_name,
-                body=self.index_body,
+                body=self.get_index_from_file(),
                 ignore=400,
             )
