@@ -18,12 +18,14 @@ if __name__ == '__main__':
 
     es_sender = ElasticSearchSender(settings.elastic.host,
                                     settings.elastic.port,
-                                    index_name=settings.elastic.index)
+                                    )
     pse = PostgresExtractor(settings.postgres.dict(), state_manager)
-    es_sender.create_index()
+    es_sender.create_index('movies')
+    es_sender.create_index('genres')
+    es_sender.create_index('roles')
     while True:
         movie_data = pse.get_films_data()
-        state_manager.save_state()
+        #state_manager.save_state()
         tformed_data = transform(movie_data)
         es_sender.send_data(tformed_data)
         sleep(settings.timeout)

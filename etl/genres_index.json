@@ -1,0 +1,97 @@
+{
+    "mappings":
+    {
+        "dynamic": "strict",
+        "properties":
+        {
+                "dynamic": "strict",
+                "properties":
+                {
+                    "id":
+                    {
+                        "type": "keyword"
+                    },
+                    "name":
+                    {
+                        "type": "text",
+                        "analyzer": "ru_en"
+                    },
+                    "films":
+                    {
+                        "type": "nested",
+                        "dynamic": "strict",
+                        "properties":
+                        {
+                            "id":
+                            {
+                                "type": "keyword"
+                            },
+                            "title":
+                            {
+                                "type": "text",
+                                "analyzer": "ru_en",
+                                "fields":
+                                {
+                                    "raw":
+                                    {
+                                        "type": "keyword"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    },
+    "settings":
+    {
+        "analysis":
+        {
+            "analyzer":
+            {
+                "ru_en":
+                {
+                    "filter":
+                    [
+                        "lowercase",
+                        "english_stop",
+                        "english_stemmer",
+                        "english_possessive_stemmer",
+                        "russian_stop",
+                        "russian_stemmer"
+                    ],
+                    "tokenizer": "standard"
+                }
+            },
+            "filter":
+            {
+                "english_possessive_stemmer":
+                {
+                    "language": "possessive_english",
+                    "type": "stemmer"
+                },
+                "english_stemmer":
+                {
+                    "language": "english",
+                    "type": "stemmer"
+                },
+                "english_stop":
+                {
+                    "stopwords": "_english_",
+                    "type": "stop"
+                },
+                "russian_stemmer":
+                {
+                    "language": "russian",
+                    "type": "stemmer"
+                },
+                "russian_stop":
+                {
+                    "stopwords": "_russian_",
+                    "type": "stop"
+                }
+            }
+        },
+        "refresh_interval": "1s"
+    }
+}

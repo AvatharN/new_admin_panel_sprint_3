@@ -4,7 +4,7 @@ import json
 from typing import Dict, Generator, List, Any
 
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import streaming_bulk
+from elasticsearch.helpers import streaming_bulk, BulkIndexError
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, TransportError
 from backoff import on_exception, expo
 
@@ -14,16 +14,17 @@ class ElasticSearchSender:
     Class for sending data to ES. Context managed.
     """
 
-    def __init__(self, host: str, port: int, index_name: str, scheme: str = 'http'):
+    def __init__(self, host: str, port: int, scheme: str = 'http'):
+        self.index_name = None
         self.host = host
         self.port = port
         self.scheme = scheme
         self.client = None
-        self.index_name = index_name
         self.index_body = None
 
-    def get_index_from_file(self):
-        with open('index.json') as file:
+    def get_index_from_file(self, entity: str):
+        with open(f'{entity}_index.json') as file:
+            logging.log(logging.INFO, f"Trying to open {entity+'_index.json'}")
             self.index_body = json.load(file)
             return self.index_body
 
@@ -39,7 +40,7 @@ class ElasticSearchSender:
                                       'port': self.port,
                                       'scheme': self.scheme}])
 
-    def _generate_actions(self, data: List[Dict]) -> Generator[Dict, Any, Any]:
+    def _generate_movie_actions(self, data: List[Dict]) -> Generator[Dict, Any, Any]:
         """
         :param data:
         :return: Dict that match index schema
@@ -61,22 +62,58 @@ class ElasticSearchSender:
             logging.log(logging.INFO, doc)
             yield doc
 
+    def _generate_role_actions(self, data: List[Dict]) -> Generator[Dict, Any, Any]:
+        for row in data:
+            if row['id'] and row['name']:
+                doc = {
+                    '_id': row['id'],
+                    'id': row['id'],
+                    'name': row['name'],
+                    'films': [{"id": f["id"], "title": f["title"]} for f in row["films"].values()]
+                }
+                logging.log(logging.INFO, doc)
+                yield doc
+
+    def _generate_genre_actions(self, data: List[Dict]) -> Generator[Dict, Any, Any]:
+        for row in data:
+            if row['id'] and row['name']:
+                doc = {
+                    '_id': row['id'],
+                    'id': row['id'],
+                    'name': row['name'],
+                    'films': [{"id": f["id"], "title": f["title"]} for f in row["films"].values()]
+                }
+                logging.log(logging.INFO, doc)
+                yield doc
+
     @on_exception(expo, (ConnectionError, ConnectionTimeout, TransportError), max_tries=500)
-    def send_data(self, data: List[Dict]):
+    def send_data(self, data_dict: Dict[str, List[Dict]]):
         """
         Send bulk data to ElasticSearch. Context Managed, no need to wrap it 'with'
         :param data:
         :return:
         """
-        with self as client:
-            for action in streaming_bulk(client=client,
-                                         index=self.index_name,
-                                         actions=self._generate_actions(data)
-                                         ):
-                logging.log(logging.DEBUG, action)
+        for entity, data in data_dict.items():
+            self.create_index(entity)
+            with self as client:
+                actions = {
+                    "movies": self._generate_movie_actions,
+                    "roles": self._generate_role_actions,
+                    "genres": self._generate_genre_actions
+                }[entity](data)
+
+                try:
+                    for action in streaming_bulk(client=client,
+                                                 index=entity,
+                                                 actions=actions
+                                                 ):
+                        logging.log(logging.DEBUG, action)
+                except BulkIndexError as e:
+                    logging.error(f"BulkIndexError: {e}")
+                    logging.error(f"Failed documents: {e.errors}")
 
     @on_exception(expo, (ConnectionError, ConnectionTimeout, TransportError), max_tries=500)
-    def create_index(self) -> None:
+    def create_index(self, index_name: str) -> None:
         """
         Trying to create index, ignores error 400 for case if it's already created
         Context Managed, no need to wrap it 'with'
@@ -84,7 +121,7 @@ class ElasticSearchSender:
         """
         with self as client:
             client.indices.create(
-                index=self.index_name,
-                body=self.get_index_from_file(),
+                index=index_name,
+                body=self.get_index_from_file(index_name),
                 ignore=400,
             )
