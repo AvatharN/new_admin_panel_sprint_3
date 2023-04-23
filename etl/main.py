@@ -25,7 +25,7 @@ if __name__ == '__main__':
     es_sender.create_index('roles')
     while True:
         movie_data = pse.get_films_data()
-        #state_manager.save_state()
         tformed_data = transform(movie_data)
         es_sender.send_data(tformed_data)
+        state_manager.save_state()
         sleep(settings.timeout)
